@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Password;
 
 class AuthController extends Controller
 {
+    /**
+     * Register a new user.
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create([
@@ -32,11 +35,16 @@ class AuthController extends Controller
         ], 201);
     }
 
+    /**
+     * Log the user in.
+     *
+     * Multiple devices/sessions are allowed.
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         $credentials = $request->validated();
 
-        if (! Auth::attempt($credentials)) {
+        if (!Auth::attempt($credentials)) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
@@ -45,10 +53,13 @@ class AuthController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        // Revoke previous tokens for a clean single-session login.
-        // Remove this line if you want to support multiple concurrent sessions/devices.
-        $user->tokens()->delete();
-
+        /*
+         * IMPORTANT:
+         * Do NOT delete the user's existing tokens here.
+         *
+         * This allows the same account to remain logged in
+         * on multiple devices.
+         */
         $token = $user->createToken('api-token')->plainTextToken;
 
         return response()->json([
@@ -57,15 +68,28 @@ class AuthController extends Controller
         ]);
     }
 
+    /**
+     * Log the current device/session out.
+     */
     public function logout(): JsonResponse
     {
         /** @var User $user */
         $user = Auth::user();
-        $user->currentAccessToken()->delete();
 
-        return response()->json(['message' => 'Logged out successfully.']);
+        $token = $user->currentAccessToken();
+
+        if ($token) {
+            $token->delete();
+        }
+
+        return response()->json([
+            'message' => 'Logged out successfully.',
+        ]);
     }
 
+    /**
+     * Get the currently authenticated user.
+     */
     public function me(): JsonResponse
     {
         return response()->json([
@@ -73,17 +97,31 @@ class AuthController extends Controller
         ]);
     }
 
-    public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
-    {
-        $status = Password::sendResetLink($request->only('email'));
+    /**
+     * Send password reset link.
+     */
+    public function forgotPassword(
+        ForgotPasswordRequest $request
+    ): JsonResponse {
+        $status = Password::sendResetLink(
+            $request->only('email')
+        );
 
         return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => __($status)])
-            : response()->json(['message' => __($status)], 422);
+            ? response()->json([
+                'message' => __($status),
+            ])
+            : response()->json([
+                'message' => __($status),
+            ], 422);
     }
 
-    public function resetPassword(ResetPasswordRequest $request): JsonResponse
-    {
+    /**
+     * Reset password.
+     */
+    public function resetPassword(
+        ResetPasswordRequest $request
+    ): JsonResponse {
         $status = Password::reset(
             $request->validated(),
             function (User $user, string $password) {
@@ -91,13 +129,19 @@ class AuthController extends Controller
                     'password' => Hash::make($password),
                 ])->save();
 
-                // Invalidate existing tokens after a password reset.
+                /*
+                 * Password reset invalidates all existing sessions.
+                 */
                 $user->tokens()->delete();
             }
         );
 
         return $status === Password::PASSWORD_RESET
-            ? response()->json(['message' => __($status)])
-            : response()->json(['message' => __($status)], 422);
+            ? response()->json([
+                'message' => __($status),
+            ])
+            : response()->json([
+                'message' => __($status),
+            ], 422);
     }
 }

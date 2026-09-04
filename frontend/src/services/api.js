@@ -15,7 +15,7 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
 
-    if (token) {
+    if (token && token !== 'undefined' && token !== 'null') {
       config.headers.Authorization = `Bearer ${token}`
     }
 
@@ -27,13 +27,18 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status = error.response?.status
-    const url = error.config?.url || ''
+    console.error(
+      'API Error:',
+      error.response?.status,
+      error.config?.method?.toUpperCase(),
+      error.config?.url,
+      error.response?.data,
+    )
 
     if (
-      status === 401 &&
-      !url.endsWith('/login') &&
-      !url.endsWith('/register')
+      error.response?.status === 401 &&
+      !error.config?.url?.endsWith('/login') &&
+      !error.config?.url?.endsWith('/register')
     ) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')

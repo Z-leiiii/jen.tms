@@ -1,5 +1,6 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
+import { computed, ref } from 'vue'
+import api from '../services/api'
 
 const subject = ref('')
 const selectedFile = ref(null)
@@ -9,16 +10,9 @@ const current = ref(0)
 const selectedAnswer = ref(null)
 const score = ref(0)
 const revealed = ref(false)
-let generationTimer
 
 const starterSubjects = ['Statics', 'Data structures', 'Thermodynamics', 'Calculus II']
 const questions = ref([])
-
-const fallbackQuestions = [
-  { prompt: 'What is the first move when solving a free-body diagram?', answers: ['Choose a coordinate system', 'Integrate the acceleration', 'Convert everything to watts', 'Ignore friction'], correct: 0, why: 'A clear coordinate system makes every later force and moment equation readable.' },
-  { prompt: 'Which structure gives average O(1) lookup by key?', answers: ['Linked list', 'Hash table', 'Binary heap', 'Stack'], correct: 1, why: 'Hash tables use a hash function to jump near the value instead of scanning each item.' },
-  { prompt: 'What does entropy measure in a thermodynamic system?', answers: ['Mass only', 'Energy quality or disorder', 'Pressure at sea level', 'Molecular weight'], correct: 1, why: 'Entropy tracks energy dispersal and the direction in which real processes naturally move.' },
-]
 
 const activeQuestion = computed(() => questions.value[current.value])
 const percent = computed(() => questions.value.length ? Math.round((current.value / questions.value.length) * 100) : 0)
@@ -33,18 +27,27 @@ function onFile(event) {
   if (selectedFile.value) subject.value = selectedFile.value.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ')
 }
 
-function generate() {
+async function generate() {
   isGenerating.value = true
-  clearTimeout(generationTimer)
-  generationTimer = setTimeout(() => {
-    questions.value = [...fallbackQuestions]
+  
+  try {
+    const response = await api.post('/quiz/generate', {
+      subject: subject.value,
+      file_content: null // Can be enhanced later to process uploaded files
+    })
+    
+    questions.value = response.data.questions
     current.value = 0
     score.value = 0
     selectedAnswer.value = null
     revealed.value = false
     generated.value = true
+  } catch (error) {
+    console.error('Failed to generate quiz:', error)
+    alert('Failed to generate quiz. Please try again.')
+  } finally {
     isGenerating.value = false
-  }, 650)
+  }
 }
 
 function answer(index) {
@@ -70,7 +73,6 @@ function reset() {
   subject.value = ''
 }
 
-onBeforeUnmount(() => clearTimeout(generationTimer))
 </script>
 
 <template>
@@ -98,7 +100,7 @@ onBeforeUnmount(() => clearTimeout(generationTimer))
         <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-wider text-ink-soft">Or pick your battlefield</p><h2 class="mt-1 text-xl font-bold">What are we learning?</h2></div><span class="text-2xl">⚙</span></div>
         <input v-model="subject" class="neo-field mt-4" placeholder="e.g. Signals and systems" />
         <div class="mt-3 flex flex-wrap gap-2"><button v-for="item in starterSubjects" :key="item" class="neo-btn !min-h-10 !px-3 !text-xs" :class="subject === item ? 'text-indigo' : 'text-ink-soft'" @click="chooseSubject(item)">{{ item }}</button></div>
-        <button class="neo-btn mt-5 w-full !bg-indigo !text-white !shadow-none sm:w-auto" :disabled="!subject.trim() || isGenerating" @click="generate">{{ isGenerating ? 'Shuffling the brain cards…' : '⚡ Generate a 3-question quiz' }}</button>
+        <button class="neo-btn mt-5 w-full !bg-indigo !text-white !shadow-none sm:w-auto" :disabled="!subject.trim() || isGenerating" @click="generate">{{ isGenerating ? 'Generating questions' : '⚡ Generate 30 questions' }}</button>
       </section>
     </template>
 
