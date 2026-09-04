@@ -15,9 +15,7 @@ use Illuminate\Http\Request;
 
 class TaskController extends Controller
 {
-    public function __construct(private readonly TaskService $tasks)
-    {
-    }
+    public function __construct(private readonly TaskService $tasks) {}
 
     /**
      * GET /projects/{project}/tasks?status=&priority=&assigned_to=&search=&due_before=

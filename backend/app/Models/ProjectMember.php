@@ -3,12 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class ProjectMember extends Model
+class ProjectMember extends Pivot
 {
     use HasUuids;
+
+    protected $table = 'project_members';
 
     public $timestamps = false;
 
@@ -21,6 +23,14 @@ class ProjectMember extends Model
     protected $casts = [
         'created_at' => 'datetime',
     ];
+
+    /**
+     * The pivot table only tracks created_at.
+     */
+    public function getUpdatedAtColumn(): ?string
+    {
+        return null;
+    }
 
     public function project(): BelongsTo
     {

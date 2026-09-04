@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\ActivityLog;
 use App\Models\Project;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
@@ -38,7 +37,7 @@ class ProjectService
 
             $this->log($project, null, $owner, 'created the project');
 
-            return $project->load('owner');
+            return $project->refresh()->load('owner');
         });
     }
 
@@ -68,7 +67,7 @@ class ProjectService
         $project->members()->syncWithoutDetaching([
             $userId => ['role' => $role],
         ]);
-        $this->log($project, null, $actor, "added a member to the project");
+        $this->log($project, null, $actor, 'added a member to the project');
 
         return $project->fresh('members');
     }
