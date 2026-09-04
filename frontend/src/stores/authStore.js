@@ -17,12 +17,18 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials) {
       this.loading = true
       this.error = null
+
       try {
         const { data } = await authService.login(credentials)
+
         this.setSession(data.user, data.token)
+
         return data
       } catch (err) {
-        this.error = err.response?.data?.message || 'Unable to log in.'
+        this.error =
+          err.response?.data?.message ||
+          'Unable to log in.'
+
         throw err
       } finally {
         this.loading = false
@@ -32,12 +38,18 @@ export const useAuthStore = defineStore('auth', {
     async register(payload) {
       this.loading = true
       this.error = null
+
       try {
         const { data } = await authService.register(payload)
+
         this.setSession(data.user, data.token)
+
         return data
       } catch (err) {
-        this.error = err.response?.data?.message || 'Unable to create your account.'
+        this.error =
+          err.response?.data?.message ||
+          'Unable to create your account.'
+
         throw err
       } finally {
         this.loading = false
@@ -54,21 +66,32 @@ export const useAuthStore = defineStore('auth', {
 
     async fetchMe() {
       const { data } = await authService.me()
+
       this.user = data.user
-      localStorage.setItem('user', JSON.stringify(data.user))
+
+      localStorage.setItem(
+        'user',
+        JSON.stringify(data.user),
+      )
+
       return data.user
     },
 
     setSession(user, token) {
       this.user = user
       this.token = token
+
       localStorage.setItem('token', token)
-      localStorage.setItem('user', JSON.stringify(user))
+      localStorage.setItem(
+        'user',
+        JSON.stringify(user),
+      )
     },
 
     clearSession() {
       this.user = null
       this.token = null
+
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     },

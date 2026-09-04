@@ -13,6 +13,7 @@ const submitting = ref(false)
 
 async function handleSubmit() {
   submitting.value = true
+
   try {
     await auth.login(form.value)
     router.push({ name: 'dashboard' })
