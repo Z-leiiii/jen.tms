@@ -3,7 +3,7 @@
 # Render deployment
 # =========================================================
 
-FROM php:8.3-fpm-bookworm
+FROM php:8.4-fpm-bookworm
 
 # =========================================================
 # SYSTEM DEPENDENCIES
