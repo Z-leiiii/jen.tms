@@ -20,7 +20,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if ($this->app->environment('production')) {
+        /*
+        |--------------------------------------------------------------------------
+        | Force HTTPS in Production
+        |--------------------------------------------------------------------------
+        |
+        | Render serves the application through HTTPS. This makes Laravel
+        | generate HTTPS URLs for Vite assets, CSS, JS, routes, etc.
+        |
+        */
+        if (app()->environment('production')) {
             URL::forceScheme('https');
         }
     }
