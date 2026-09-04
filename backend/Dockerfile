@@ -80,6 +80,10 @@ RUN npm install
 
 RUN npm run build
 
+RUN php artisan config:clear
+RUN php artisan cache:clear
+RUN php artisan view:clear
+
 # =========================================================
 # LARAVEL DIRECTORIES / PERMISSIONS
 # =========================================================
