@@ -24,8 +24,8 @@ class TaskService
             ->when($filters['priority'] ?? null, fn ($q, $v) => $q->where('priority', $v))
             ->when($filters['assigned_to'] ?? null, fn ($q, $v) => $q->where('assigned_to', $v))
             ->when($filters['search'] ?? null, fn ($q, $v) => $q->where(function ($q) use ($v) {
-                $q->where('title', 'ilike', "%{$v}%")
-                    ->orWhere('description', 'ilike', "%{$v}%");
+                $q->whereLike('title', "%{$v}%", caseSensitive: false)
+                    ->orWhereLike('description', "%{$v}%", caseSensitive: false);
             }))
             ->when($filters['due_before'] ?? null, fn ($q, $v) => $q->where('due_date', '<=', $v))
             ->withCount(['comments', 'attachments'])
@@ -50,7 +50,7 @@ class TaskService
                 $this->notifyAssignment($task);
             }
 
-            return $task->load(['assignee', 'creator']);
+            return $task->refresh()->load(['assignee', 'creator']);
         });
     }
 

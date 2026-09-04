@@ -1,10 +1,12 @@
 <?php
 
-use Illuminate\Support\Str;
-
 return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
+
+    // Disk used for task attachments. Set to 'supabase' once the
+    // SUPABASE_STORAGE_* credentials below are configured.
+    'attachments' => env('ATTACHMENT_DISK', 'public'),
 
     'disks' => [
 

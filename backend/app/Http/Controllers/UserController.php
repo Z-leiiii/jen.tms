@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Http\Requests\UpdatePasswordRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
-
 
 class UserController extends Controller
 {
@@ -23,10 +22,12 @@ class UserController extends Controller
     {
         $search = trim((string) $request->query('search', ''));
 
-        $users = \App\Models\User::query()
+        $users = User::query()
             ->when($search !== '', function ($q) use ($search) {
-                $q->where('name', 'ilike', "%{$search}%")
-                    ->orWhere('email', 'ilike', "%{$search}%");
+                $q->where(function ($q) use ($search) {
+                    $q->whereLike('name', "%{$search}%", caseSensitive: false)
+                        ->orWhereLike('email', "%{$search}%", caseSensitive: false);
+                });
             }, fn ($q) => $q->whereRaw('1 = 0')) // no query = no results, avoid dumping the whole user table
             ->where('id', '!=', $request->user()->id)
             ->limit(10)

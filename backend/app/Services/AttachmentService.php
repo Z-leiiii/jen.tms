@@ -13,12 +13,15 @@ use Illuminate\Support\Str;
 class AttachmentService
 {
     /**
-     * Uses the 'supabase' filesystem disk (S3-compatible — see config/filesystems.php
-     * and .env for SUPABASE_STORAGE_* vars). Falls back to nothing fancy: just
-     * Laravel's standard Storage facade, so swapping providers later is a config change,
-     * not a rewrite.
+     * Disk is configurable via ATTACHMENT_DISK ('supabase' in production — S3-compatible,
+     * see config/filesystems.php and the SUPABASE_STORAGE_* vars; 'public' locally).
+     * Everything goes through Laravel's Storage facade, so swapping providers is a
+     * config change, not a rewrite.
      */
-    private const DISK = 'supabase';
+    private function disk(): string
+    {
+        return (string) config('filesystems.attachments');
+    }
 
     public function upload(Task $task, User $uploader, UploadedFile $file): Attachment
     {
@@ -29,12 +32,12 @@ class AttachmentService
             $file->getClientOriginalName()
         );
 
-        Storage::disk(self::DISK)->put($path, file_get_contents($file->getRealPath()), 'public');
+        Storage::disk($this->disk())->put($path, file_get_contents($file->getRealPath()), 'public');
 
         $attachment = Attachment::create([
             'task_id' => $task->id,
             'filename' => $file->getClientOriginalName(),
-            'file_url' => Storage::disk(self::DISK)->url($path),
+            'file_url' => Storage::disk($this->disk())->url($path),
             'storage_path' => $path,
             'uploaded_by' => $uploader->id,
         ]);
@@ -51,7 +54,7 @@ class AttachmentService
 
     public function delete(Attachment $attachment): void
     {
-        Storage::disk(self::DISK)->delete($attachment->storage_path);
+        Storage::disk($this->disk())->delete($attachment->storage_path);
         $attachment->delete();
     }
 }

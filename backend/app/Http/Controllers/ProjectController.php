@@ -13,9 +13,7 @@ use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
-    public function __construct(private readonly ProjectService $projects)
-    {
-    }
+    public function __construct(private readonly ProjectService $projects) {}
 
     public function index(Request $request): JsonResponse
     {

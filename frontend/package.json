@@ -1,5 +1,5 @@
 {
-  "name": "studydeck-frontend",
+  "name": "jen-tms-frontend",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -19,10 +19,15 @@
     "vuedraggable": "^4.1.0"
   },
   "devDependencies": {
+    "@tsconfig/node24": "^24.0.5",
+    "@types/node": "^26.4.1",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/tsconfig": "^0.9.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
-    "vite": "^6.0.3"
+    "typescript": "^7.0.2",
+    "vite": "^6.0.3",
+    "vue-tsc": "^3.3.11"
   }
 }

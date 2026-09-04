@@ -9,7 +9,6 @@ use App\Models\Comment;
 use App\Models\Notification;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
