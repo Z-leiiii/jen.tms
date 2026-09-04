@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* Prevents iOS Safari from auto-zooming into inputs below 16px, which
+       is the #1 cause of "the layout jumps/distorts on mobile" complaints. */
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-surface text-ink font-sans antialiased;
+    /* overflow-x hidden as a safety net against any element that miscalculates
+       width and would otherwise create horizontal scroll/jitter on mobile. */
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display text-ink;
+  }
+
+  /* Respect users who've asked for less motion — required by our own
+     accessibility floor, and neomorphic press animations are exactly the
+     kind of motion that should back off here. */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Raised surface — the default neomorphic "sitting above the mat" card.
+     Uses the smaller shadow on mobile by default (base), and steps up to
+     the fuller shadow at sm+ so it never looks visually heavier than the
+     card itself on a small screen. */
+  .neo-raised {
+    @apply bg-surface rounded-2xl shadow-neo-sm sm:shadow-neo;
+  }
+
+  .neo-raised-compact {
+    @apply bg-surface rounded-xl shadow-neo-xs sm:shadow-neo-sm;
+  }
+
+  /* Inset surface — "pressed into the mat", used for trays, active nav
+     items, and pressed/checked states. */
+  .neo-inset {
+    @apply bg-surface rounded-2xl shadow-neo-inset;
+  }
+
+  .neo-inset-sm {
+    @apply bg-surface rounded-xl shadow-neo-inset-sm;
+  }
+
+  /* All interactive controls get a minimum 44x44px hit target — Apple/WCAG's
+     recommended minimum touch size, non-negotiable for a mobile-usable app. */
+  .neo-btn {
+    @apply neo-raised-compact min-h-touch inline-flex items-center justify-center gap-2
+      px-5 font-semibold text-sm text-ink transition-all duration-150
+      active:shadow-neo-inset-sm active:scale-[0.98] select-none;
+  }
+
+  .neo-btn-primary {
+    @apply text-indigo active:text-indigo-dark;
+  }
+
+  .neo-field {
+    @apply neo-inset-sm min-h-touch w-full border-none outline-none bg-transparent
+      px-4 text-[16px] text-ink placeholder:text-ink-faint
+      focus:ring-2 focus:ring-indigo;
+    /* font-size stays at 16px (not smaller) specifically to stop iOS
+       Safari's auto-zoom-on-focus behavior, which is a major source of
+       layout "jump" on mobile forms. */
+  }
+}
