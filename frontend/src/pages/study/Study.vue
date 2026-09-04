@@ -1,6 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
-import api from '../services/api'
+import api from '../../services/api'
 
 const subject = ref('')
 const selectedFile = ref(null)
