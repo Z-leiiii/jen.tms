@@ -6,6 +6,7 @@
   html {
     /* Prevents iOS Safari from auto-zooming into inputs below 16px, which
        is the #1 cause of "the layout jumps/distorts on mobile" complaints. */
+    text-size-adjust: 100%;
     -webkit-text-size-adjust: 100%;
   }
 

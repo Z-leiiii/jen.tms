@@ -12,8 +12,11 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const navItems = [
-  { name: 'dashboard', label: 'Dashboard', icon: '🏠' },
+  { name: 'dashboard', label: 'Today', icon: '⚡' },
+  { name: 'study', label: 'Study lab', icon: '🧠' },
   { name: 'projects', label: 'Projects', icon: '📁' },
+  { name: 'calendar', label: 'Calendar', icon: '🗓️' },
+  { name: 'reports', label: 'Progress', icon: '📈' },
 ]
 
 function go(name) {

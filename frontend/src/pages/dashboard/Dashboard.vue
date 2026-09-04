@@ -1,93 +1,85 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/authStore'
-import { projectService } from '@/services/projectService'
 import NeoCard from '@/components/ui/NeoCard.vue'
 import NeoButton from '@/components/ui/NeoButton.vue'
 
+const router = useRouter()
 const auth = useAuthStore()
-const projects = ref([])
-const loading = ref(true)
-const errorMsg = ref('')
+const sprintRunning = ref(false)
+const sprintSeconds = ref(25 * 60)
+let sprintTimer
 
-const stats = computed(() => ({
-  total: projects.value.length,
-  active: projects.value.filter((p) => p.status === 'active').length,
-  archived: projects.value.filter((p) => p.status === 'archived').length,
-}))
+const firstName = computed(() => auth.user?.name?.split(' ')[0] || 'Engineer')
+const sprintLabel = computed(() => {
+  const minutes = Math.floor(sprintSeconds.value / 60).toString().padStart(2, '0')
+  const seconds = (sprintSeconds.value % 60).toString().padStart(2, '0')
+  return `${minutes}:${seconds}`
+})
 
-async function loadProjects() {
-  loading.value = true
-  errorMsg.value = ''
-  try {
-    const { data } = await projectService.list()
-    projects.value = data.data
-  } catch {
-    errorMsg.value = "Couldn't load your projects. Try refreshing."
-  } finally {
-    loading.value = false
+const tasks = ref([
+  { title: 'Finish circuits lab report', meta: 'Due today · ECE 204', tag: 'urgent', done: false },
+  { title: 'Review thermodynamics notes', meta: '45 min study block', tag: 'focus', done: false },
+  { title: 'Push group project prototype', meta: 'Due tomorrow · Design team', tag: 'team', done: true },
+])
+
+function toggleSprint() {
+  sprintRunning.value = !sprintRunning.value
+  if (sprintRunning.value) {
+    sprintTimer = setInterval(() => {
+      if (sprintSeconds.value > 0) sprintSeconds.value -= 1
+      else toggleSprint()
+    }, 1000)
+  } else {
+    clearInterval(sprintTimer)
   }
 }
 
-onMounted(loadProjects)
+function openStudy() { router.push({ name: 'study' }) }
 </script>
 
 <template>
-  <div class="flex flex-col gap-6 max-w-6xl mx-auto">
-    <!-- Header row: stacks on mobile, sits side-by-side from sm up -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-bold">Hey, {{ auth.user?.name?.split(' ')[0] || 'there' }}</h1>
-        <p class="text-sm text-ink-soft mt-1">Here's where things stand across your projects.</p>
+  <div class="mx-auto flex max-w-6xl flex-col gap-5 pb-6">
+    <section class="neo-raised overflow-hidden bg-indigo p-5 text-white sm:p-7">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-white/70">Thursday · 04 September</p>
+          <h1 class="font-display text-3xl font-bold leading-tight sm:text-4xl">Make today<br />ridiculously productive, {{ firstName }}.</h1>
+          <p class="mt-3 max-w-md text-sm text-white/75">One focused sprint, one tiny win, then momentum does the heavy lifting.</p>
+        </div>
+        <span class="hidden text-5xl sm:block" aria-hidden="true">✦</span>
       </div>
-      <NeoButton variant="primary" class="self-start sm:self-auto">+ New project</NeoButton>
+      <div class="mt-6 flex flex-wrap gap-3">
+        <NeoButton class="!bg-white !text-indigo !shadow-none" @click="openStudy">🧠 Make a quiz</NeoButton>
+        <NeoButton class="!bg-indigo-dark !text-white !shadow-none" @click="toggleSprint">{{ sprintRunning ? 'Pause sprint' : 'Start 25 min sprint' }}</NeoButton>
+      </div>
+    </section>
+
+    <div class="grid gap-4 sm:grid-cols-[1.35fr_1fr]">
+      <NeoCard>
+        <div class="mb-4 flex items-center justify-between"><div><p class="text-xs font-bold uppercase tracking-wider text-ink-soft">Your launch queue</p><h2 class="mt-1 text-xl font-bold">Next up</h2></div><span class="text-2xl">🚀</span></div>
+        <div class="flex flex-col gap-2">
+          <label v-for="task in tasks" :key="task.title" class="neo-inset-sm flex min-h-touch cursor-pointer items-center gap-3 px-3 py-2 transition-opacity" :class="task.done ? 'opacity-50' : ''">
+            <input v-model="task.done" type="checkbox" class="h-5 w-5 accent-indigo" />
+            <span class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold" :class="task.done ? 'line-through' : ''">{{ task.title }}</span><span class="block truncate text-xs text-ink-soft">{{ task.meta }}</span></span>
+            <span class="rounded-full px-2 py-1 text-[10px] font-bold uppercase" :class="task.tag === 'urgent' ? 'bg-coral-soft text-coral' : task.tag === 'focus' ? 'bg-indigo-soft text-indigo' : 'bg-emerald-soft text-emerald'">{{ task.tag }}</span>
+          </label>
+        </div>
+      </NeoCard>
+
+      <NeoCard class="flex flex-col justify-between">
+        <div class="flex items-start justify-between"><div><p class="text-xs font-bold uppercase tracking-wider text-ink-soft">Focus reactor</p><h2 class="mt-1 text-xl font-bold">{{ sprintLabel }}</h2></div><span class="text-2xl">⏱</span></div>
+        <div class="my-5 h-3 overflow-hidden rounded-full bg-indigo-soft"><div class="h-full rounded-full bg-indigo transition-all" :style="{ width: `${(sprintSeconds / 1500) * 100}%` }" /></div>
+        <button class="neo-btn w-full text-indigo" @click="toggleSprint">{{ sprintRunning ? 'Pause the reactor' : 'Ignite focus mode' }}</button>
+      </NeoCard>
     </div>
 
-    <!-- Stat cards: 1 col on mobile, 3 across from sm up -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      <NeoCard compact>
-        <p class="text-xs font-semibold text-ink-soft mb-2">Total projects</p>
-        <p class="text-2xl font-bold font-display">{{ stats.total }}</p>
-      </NeoCard>
-      <NeoCard compact>
-        <p class="text-xs font-semibold text-ink-soft mb-2">Active</p>
-        <p class="text-2xl font-bold font-display text-emerald">{{ stats.active }}</p>
-      </NeoCard>
-      <NeoCard compact>
-        <p class="text-xs font-semibold text-ink-soft mb-2">Archived</p>
-        <p class="text-2xl font-bold font-display text-ink-soft">{{ stats.archived }}</p>
-      </NeoCard>
-    </div>
-
-    <!-- Projects grid: 1 col mobile, 2 tablet, 3 desktop -->
-    <div>
-      <h2 class="text-base font-semibold mb-3">Your projects</h2>
-
-      <p v-if="loading" class="text-sm text-ink-soft">Loading your projects…</p>
-      <p v-else-if="errorMsg" class="text-sm text-coral">{{ errorMsg }}</p>
-
-      <NeoCard v-else-if="projects.length === 0">
-        <p class="font-semibold mb-1">Start your first project</p>
-        <p class="text-sm text-ink-soft mb-4">Group your assignments and group work into a project to track everything in one place.</p>
-        <NeoButton variant="primary">Create project</NeoButton>
-      </NeoCard>
-
-      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <NeoCard v-for="project in projects" :key="project.id" compact>
-          <div class="flex items-start justify-between gap-2 mb-3">
-            <h3 class="font-semibold truncate">{{ project.name }}</h3>
-            <span
-              class="w-3 h-3 rounded-full flex-shrink-0 mt-1"
-              :style="{ backgroundColor: project.color }"
-            />
-          </div>
-          <p class="text-sm text-ink-soft line-clamp-2 mb-4">{{ project.description || 'No description yet.' }}</p>
-          <div class="flex items-center justify-between text-xs text-ink-soft">
-            <span>{{ project.members_count ?? 0 }} members</span>
-            <span>{{ project.tasks_count ?? 0 }} tasks</span>
-          </div>
-        </NeoCard>
-      </div>
+    <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <NeoCard compact><p class="text-xs text-ink-soft">Study streak</p><p class="mt-1 font-display text-2xl font-bold">7 <span class="text-base">days</span></p></NeoCard>
+      <NeoCard compact><p class="text-xs text-ink-soft">Quiz accuracy</p><p class="mt-1 font-display text-2xl font-bold text-emerald">86%</p></NeoCard>
+      <NeoCard compact><p class="text-xs text-ink-soft">Due this week</p><p class="mt-1 font-display text-2xl font-bold text-amber">12</p></NeoCard>
+      <NeoCard compact><p class="text-xs text-ink-soft">Team pulse</p><p class="mt-1 font-display text-2xl font-bold text-coral">Good</p></NeoCard>
     </div>
   </div>
 </template>
