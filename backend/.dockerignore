@@ -14,7 +14,6 @@ storage/framework/sessions/*
 storage/framework/views/*
 
 docker-compose.yml
-Dockerfile
 
 npm-debug.log
 yarn-debug.log

@@ -1,12 +1,14 @@
 # =========================================================
-# Laravel + Vite frontend build
+# Laravel 12 + PHP 8.3 + Nginx + PHP-FPM + Vite
+# Render deployment
 # =========================================================
 
 FROM php:8.3-fpm-bookworm
 
-# ---------------------------------------------------------
-# Install system dependencies
-# ---------------------------------------------------------
+# =========================================================
+# SYSTEM DEPENDENCIES
+# =========================================================
+
 RUN apt-get update && apt-get install -y \
     nginx \
     supervisor \
@@ -21,7 +23,9 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libfreetype6-dev \
     libonig-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure gd \
+        --with-freetype \
+        --with-jpeg \
     && docker-php-ext-install \
         pdo_pgsql \
         mbstring \
@@ -33,72 +37,103 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# ---------------------------------------------------------
-# Install Composer
-# ---------------------------------------------------------
+# =========================================================
+# COMPOSER
+# =========================================================
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# ---------------------------------------------------------
-# Laravel working directory
-# ---------------------------------------------------------
+# =========================================================
+# APPLICATION DIRECTORY
+# =========================================================
+
 WORKDIR /var/www/html
 
-# ---------------------------------------------------------
-# Copy Laravel project
-# ---------------------------------------------------------
+# =========================================================
+# COPY LARAVEL APPLICATION
+# =========================================================
+
 COPY . .
 
-# ---------------------------------------------------------
-# Install PHP dependencies
-# ---------------------------------------------------------
+# =========================================================
+# INSTALL PHP DEPENDENCIES
+# =========================================================
+
 RUN composer install \
     --no-dev \
     --optimize-autoloader \
     --no-interaction
 
-# ---------------------------------------------------------
-# Install Node dependencies + build Vite
-# ---------------------------------------------------------
+# =========================================================
+# INSTALL NODE DEPENDENCIES
+# =========================================================
+
 RUN npm install
+
+# =========================================================
+# BUILD LARAVEL VITE ASSETS
+# =========================================================
+# This creates:
+# public/build/manifest.json
+# and the compiled CSS/JS assets Laravel needs.
+# =========================================================
 
 RUN npm run build
 
-# ---------------------------------------------------------
-# Laravel permissions
-# ---------------------------------------------------------
-RUN chown -R www-data:www-data \
-    /var/www/html/storage \
-    /var/www/html/bootstrap/cache
+# =========================================================
+# LARAVEL DIRECTORIES / PERMISSIONS
+# =========================================================
 
-# ---------------------------------------------------------
-# Nginx
-# ---------------------------------------------------------
+RUN mkdir -p \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache
+
+RUN chown -R www-data:www-data \
+    storage \
+    bootstrap/cache
+
+RUN chmod -R 775 \
+    storage \
+    bootstrap/cache
+
+# =========================================================
+# NGINX CONFIGURATION
+# =========================================================
+
 RUN rm -f /etc/nginx/sites-enabled/default
 
-COPY docker/nginx.conf /etc/nginx/sites-available/default
+COPY docker/nginx.conf \
+    /etc/nginx/sites-available/default
 
 RUN ln -sf \
     /etc/nginx/sites-available/default \
     /etc/nginx/sites-enabled/default
 
-# ---------------------------------------------------------
-# PHP-FPM
-# ---------------------------------------------------------
+# =========================================================
+# PHP-FPM CONFIGURATION
+# =========================================================
+
 COPY docker/www.conf \
     /usr/local/etc/php-fpm.d/www.conf
 
-# ---------------------------------------------------------
-# Supervisor
-# ---------------------------------------------------------
+# =========================================================
+# SUPERVISOR CONFIGURATION
+# =========================================================
+
 COPY docker/supervisord.conf \
     /etc/supervisor/conf.d/supervisord.conf
 
-# ---------------------------------------------------------
-# Render port
-# ---------------------------------------------------------
+# =========================================================
+# RENDER PORT
+# =========================================================
+
 EXPOSE 10000
 
-# ---------------------------------------------------------
-# Start PHP-FPM + Nginx
-# ---------------------------------------------------------
+# =========================================================
+# START PHP-FPM + NGINX
+# =========================================================
+
 CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
